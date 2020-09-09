@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "spa-tracker"
+name = "telegram-user-tracker"
 version = "0.1.0"
 description = ""
 authors = ["Hung-I Wang <whygowe@gmail.com>"]
