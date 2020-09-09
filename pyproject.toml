@@ -6,6 +6,7 @@ authors = ["Hung-I Wang <whygowe@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+telethon = "^1.16.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
