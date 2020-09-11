@@ -1,3 +1,5 @@
+import re
+
 from telethon import TelegramClient, events
 from telethon.tl.types import InputMediaEmpty
 
@@ -23,6 +25,20 @@ async def handler_test(event):
     # print(await contacts.get_blocked())
     async for contact in contacts.iter_blocked():
         print(contact)
+
+
+@client.on(events.NewMessage(pattern="(?i).*block.*"))
+async def handler_block(event):
+    user = re.search(r"block (.+)", event.message.message).group(1)
+    print(user)
+    return await contacts.block(int(user))
+
+
+@client.on(events.NewMessage(pattern="(?i).*unblock.*"))
+async def handler_unblock(event):
+    user = re.search(r"unblock (.+)", event.message.message).group(1)
+    print(user)
+    return await contacts.unblock(int(user))
 
 
 # fff = None

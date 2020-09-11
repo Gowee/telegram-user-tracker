@@ -5,6 +5,7 @@ from telethon import TelegramClient
 from telethon.tl.types import User
 from telethon.tl.types import contacts as types
 from telethon.tl.functions import contacts as requests
+from telethon.hints import EntitiesLike
 
 from .client import client
 
@@ -23,7 +24,7 @@ class BlockedUser(User):
         return d
 
 
-async def get_blocked(offset: int=0, limit: int=100) -> types.Blocked:
+async def get_blocked(offset: int = 0, limit: int = 100) -> types.Blocked:
     return await client(requests.GetBlockedRequest(offset, limit))
 
 
@@ -36,6 +37,16 @@ async def iter_blocked(offset=0, _chunk_size=100) -> AsyncGenerator[BlockedUser,
             user.date_blocked = dates[user.id]
             user.__class__ = BlockedUser
             yield user
-        if (isinstance(d, types.Blocked) and not isinstance(d, types.BlockedSlice)) or d.count < _chunk_size:
+        if (
+            isinstance(d, types.Blocked) and not isinstance(d, types.BlockedSlice)
+        ) or d.count < _chunk_size:
             break
         offset += d.count
+
+
+async def block(user: EntitiesLike):
+    return await client(requests.BlockRequest(user))
+
+
+async def unblock(user: EntitiesLike):
+    return await client(requests.UnblockRequest(user))
