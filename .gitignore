@@ -140,3 +140,8 @@ cython_debug/
 
 # VSCode configuration
 .vscode/
+
+# secrets
+.api_id
+.api_hash
+*.session
