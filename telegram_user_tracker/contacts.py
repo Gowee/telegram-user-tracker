@@ -6,14 +6,21 @@ from telethon.tl.types import User
 from telethon.tl.types import contacts as types
 from telethon.tl.functions import contacts as requests
 from telethon.hints import EntitiesLike
+from telethon.extensions import BinaryReader
+
+# from
 
 from .client import client
+from .utils import struct
 
 
 class BlockedUser(User):
+    # WARNING: The CONSTRUCTOR_ID is the same as the super() while the serde binary format is not.
+    #          But as it is not listed in telethon.tl.allobjects.tlobjects, there won't be problems
+    #          unless it is unexpectedly serde elsewhere.
     date_blocked: datetime
 
-    def __init__(self, date_blocked, *args, **kwargs):
+    def __init__(self, date_blocked=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.date_blocked = date_blocked
 
@@ -23,6 +30,16 @@ class BlockedUser(User):
         d["date_blocked"] = self.date_blocked
         return d
 
+    def _bytes(self):
+        # struct.pack("<I", 0xF0F0F0F0) +
+        return super()._bytes() + struct.pack("<L", int(self.date_blocked.timestamp()))
+
+    @staticmethod
+    def from_reader(self, reader):
+        user = super().from_reader(reader)
+        user.date_blocked = reader.read_long()
+        user.__class__ = BlockedUser
+        return user
 
 async def get_blocked(offset: int = 0, limit: int = 100) -> types.Blocked:
     return await client(requests.GetBlockedRequest(offset, limit))
@@ -44,9 +61,9 @@ async def iter_blocked(offset=0, _chunk_size=100) -> AsyncGenerator[BlockedUser,
         offset += d.count
 
 
-async def block(user: EntitiesLike):
+async def block(user: EntitiesLike) -> bool:
     return await client(requests.BlockRequest(user))
 
 
-async def unblock(user: EntitiesLike):
+async def unblock(user: EntitiesLike) -> bool:
     return await client(requests.UnblockRequest(user))

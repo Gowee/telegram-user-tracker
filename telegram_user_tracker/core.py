@@ -1,12 +1,14 @@
 import re
+import json
 
 from telethon import TelegramClient, events
-from telethon.tl.types import InputMediaEmpty
+
+# from telethon.tl.types import InputMediaEmpty
 
 from .client import client
 from . import contacts
 from .storage import MessageStorage
-from .utils import DummyFile
+from .utils import DummyFile, serialize_vetor, deserialize_vetor
 
 count = 0
 storage = MessageStorage("me", "test")
@@ -23,8 +25,12 @@ async def handler(event):
 @client.on(events.NewMessage(pattern="(?i).*test"))
 async def handler_test(event):
     # print(await contacts.get_blocked())
+    blocked = []
     async for contact in contacts.iter_blocked():
-        print(contact)
+        blocked.append(contact)
+    print(blocked)
+    serde = deserialize_vetor(serialize_vetor(blocked))
+    print(serde)
 
 
 @client.on(events.NewMessage(pattern="(?i).*block.*"))
@@ -77,5 +83,10 @@ async def handler_unblock(event):
 # # async def get_previous()
 
 
-# async def check_blocked():
-#     pass
+async def check_and_report():
+    d = await storage.load()
+    previous_blocked = {}  # set(json.loads(await storage.load()))
+
+    async for blocked in contacts.iter_blocked():
+        if blocked in previous_blocked:
+            pass
