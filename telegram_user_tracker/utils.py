@@ -33,6 +33,7 @@ def serialize_vetor(vector: Sequence[TLObject]) -> bytes:
     s = struct.pack("<II", 0x1CB5C415, len(vector)) + b"".join(
         tlobject._bytes() for tlobject in vector
     )
+    # print(s)
     return s
 
 def deserialize_vetor(vector: bytes) -> Sequence[TLObject]:
