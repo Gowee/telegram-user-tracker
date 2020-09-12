@@ -56,7 +56,11 @@ def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
     else:
         render_mention = _render_mention_markdown
     name = " ".join(
-        [name_part for name_part in (user.first_name, user.last_name) if name_part is not None]
+        [
+            name_part
+            for name_part in (user.first_name, user.last_name)
+            if name_part is not None
+        ]
     )
     if not name or name.isspace():
         name = str(user.id)

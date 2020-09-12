@@ -42,27 +42,9 @@ async def handler_test(event):
 
 @client.on(events.NewMessage(pattern=r"(?i)[!/]track(?P<args>.*)"))
 async def handler_track(event):
-    # user = re.search(r"block (.+)", event.message.message).group(1)
-    # from_id
     print(event)
     requester = await client.get_entity(event.message.from_id)
-    if reply_to := await event.message.get_reply_message():
-        target = reply_to.from_id
-    else:
-        args = event.pattern_match.group("args").strip()
-        # target = None/
-
-        try:
-            if (url := urlparse(args))[1].lower() == "t.me":
-                chat, msgid = url[2].lstrip("/").split("/")
-                print(url)
-                msg = await client.get_messages(chat, ids=int(msgid))
-                target = msg.from_id
-            else:
-                target = int(args)  # if it is a id
-        except ValueError as e:
-            target = args
-
+    target = await _extract_target_user_id(event)
     try:
         target = await client.get_entity(target)
     except ValueError as e:
@@ -73,18 +55,62 @@ async def handler_track(event):
     # print(repr(target))
     await client.send_message(
         REPORT_CHANNEL,
-        f"{(render_user(target))} / ID: {target.id} is under trakcing, as requested by {render_user(requester)}.",
+        f"{(render_user(target))} / ID: {target.id} is under tracking, as requested by {render_user(requester)}.",
         parse_mode="markdown",
     )
-    await contacts.block(int(target))
+    await contacts.block(target)
+    # TODO: check return value for success
 
 
-@client.on(events.NewMessage(pattern="(?i).*unblock.*"))
-async def handler_unblock(event):
-    user = re.search(r"unblock (.+)", event.message.message).group(1)
-    print(user)
-    return await contacts.unblock(int(user))
+@client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
+async def handler_ignore(event):
+    # user = re.search(r"unblock (.+)", event.message.message).group(1)
+    requester = await client.get_entity(event.message.from_id)
+    target = await _extract_target_user_id(event)
+    try:
+        target = await client.get_entity(target)
+    except ValueError as e:
+        logger.info(
+            f"{event.message.from_id} request to ignore {target} which is invalid: {e}"
+        )
+        return
+    await client.send_message(  
+        REPORT_CHANNEL,
+        f"{(render_user(target))} / ID: {target.id} is now ignored, as requested by {render_user(requester)}.",
+        parse_mode="markdown",
+    )
+    await contacts.unblock(target)
 
+
+async def _extract_target_user_id(event) -> int:
+    if reply_to := await event.message.get_reply_message():
+        # Targeted at the sender of a replied-to messsage, with no extra args needed.
+        target = reply_to.from_id
+    else:
+        # Or the target can be extracted from the args.
+        args = event.pattern_match.group("args").strip()
+
+        try:
+            if (url := urlparse(args))[1].lower() == "t.me":
+                # Hence mtproto does not allow locating a User by their ID without entities obtained in
+                # advance, here accepting a message URL linked to a message the target sent.
+                if url[2].startswith("/c/"):
+                    # link to a message in a private chat
+                    _, chat, msgid = url[2].lstrip("/").split("/")
+                else:
+                    # in a public group
+                    chat, msgid = url[2].lstrip("/").split("/")
+
+                print(url)
+                msg = await client.get_messages(chat, ids=int(msgid))
+                target = msg.from_id
+            else:
+                # This works only for cases where the session has cached the entities of the target.
+                # Ref: https://docs.telethon.dev/en/latest/concepts/entities.html
+                target = int(args)  # if it is a id
+        except ValueError as e:
+            target = args
+    return target
 
 # fff = None
 
