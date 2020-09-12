@@ -9,7 +9,6 @@ logging.basicConfig(
 from .core import client
 
 with client:
-    print("bobmb")
     client.run_until_disconnected()
 
     # client.loop.run_until_complete()

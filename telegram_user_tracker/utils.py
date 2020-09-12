@@ -5,6 +5,7 @@ import struct
 
 from telethon.tl.tlobject import TLObject
 from telethon.extensions import BinaryReader
+from telethon.tl.types import User
 
 
 def read_file(file_path: str, strip=True, raise_on_error=False) -> Union[str, None]:
@@ -25,7 +26,7 @@ def b85size(data: bytes) -> int:
     return ceil(len(data) / 4) * 5
 
 
-def serialize_vetor(vector: Sequence[TLObject]) -> bytes:
+def serialize_vector(vector: Sequence[TLObject]) -> bytes:
     # Ref: telethon.extensions.BinaryReader.tgread_vector
     # b = BytesIO()
     # b.write()
@@ -36,8 +37,36 @@ def serialize_vetor(vector: Sequence[TLObject]) -> bytes:
     # print(s)
     return s
 
-def deserialize_vetor(vector: bytes) -> Sequence[TLObject]:
+
+def deserialize_vector(vector: bytes) -> Sequence[TLObject]:
     return BinaryReader(vector).tgread_vector()
+
+
+def _render_mention_html(id, text):
+    return f'<a href="tg://user?id={id}">{text}</a>'
+
+
+def _render_mention_markdown(id, text):
+    return f"[{text}](tg://user?id={id})"
+
+
+def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
+    if html_instead_of_markdown:
+        render_mention = _render_mention_html
+    else:
+        render_mention = _render_mention_markdown
+    name = " ".join(
+        [name_part for name_part in (user.first_name, user.last_name) if name_part is not None]
+    )
+    if not name or name.isspace():
+        name = str(user.id)
+    r = render_mention(user.id, name)
+    # print("!",  user.username)
+    if user.username:
+        r += f" (@{user.username})"
+    # print([name_part for name_part in (user.first_name, user.last_name) if name_part is not None])
+    return r
+
 
 # def serialize_vetor(vector: Iterable[TLObject], buffer: BinaryIO) -> bytes:
 #     b = BytesIO()
