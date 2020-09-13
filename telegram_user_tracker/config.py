@@ -12,7 +12,9 @@ from .utils import read_file
 API_ID = read_file("./.api_id") or os.environ.get("API_ID")
 API_HASH = read_file("./.api_hash") or os.environ.get("API_HASH")
 SESSION_NAME = os.environ.get("SESSION_NAME", "anon")
-LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper() # TODO: or simplied as `LOGLEVEL`?
+LOG_LEVEL = os.environ.get(
+    "LOG_LEVEL", "info"
+).upper()  # TODO: or simplied as `LOGLEVEL`?
 CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", 15 * 60)  # in seconds
 REPORT_CHANNEL = read_file("./.report_channel") or os.environ.get(
     "report_channel", "me"
