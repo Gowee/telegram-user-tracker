@@ -27,12 +27,14 @@ class MessageStorage:
     ident: str
     chat: EntitiesLike
     message: Message
+    default: bytes
 
-    def __init__(self, chat: EntitiesLike, key: str):
+    def __init__(self, chat: EntitiesLike, key: str, default: bytes=b''):
         self.key = key
         self.ident = f"#message_storage_{key}"
         self.chat = chat
         self.message = None
+        self.default = default
 
     def __repr__(self):
         return f"{self.__class__.__name__}(chat={self.chat}, key={self.key!r})"
@@ -54,7 +56,7 @@ class MessageStorage:
         else:
             logger.debug(f"Creating a new message for {self!r}")
             self.message = await client.send_message(
-                self.chat, f"{self.ident} ```\n::::\n```"
+                self.chat, f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```"
             )
 
     async def load(self) -> bytes:

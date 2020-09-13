@@ -1,4 +1,5 @@
 import os
+from dateutil import tz as timezone
 
 # import logging
 
@@ -16,6 +17,7 @@ CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", 15 * 60)  # in seconds
 REPORT_CHANNEL = read_file("./.report_channel") or os.environ.get(
     "report_channel", "me"
 )
+TIME_ZONE = timezone.gettz(os.environ.get("TIMEZONE", "Asia/Shanghai"))
 
 try:
     REPORT_CHANNEL = int(REPORT_CHANNEL)
@@ -24,5 +26,13 @@ except ValueError:
 
 assert API_ID
 assert API_HASH
+assert TIME_ZONE
 
-__all__ = ("API_ID", "API_HASH", "SESSION_NAME", "LOG_LEVEL", "REPORT_CHANNEL")
+__all__ = (
+    "API_ID",
+    "API_HASH",
+    "SESSION_NAME",
+    "LOG_LEVEL",
+    "REPORT_CHANNEL",
+    "TIME_ZONE",
+)

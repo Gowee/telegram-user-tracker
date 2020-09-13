@@ -2,6 +2,7 @@ from typing import Union, Sequence, BinaryIO
 from math import ceil
 from io import BytesIO
 import struct
+from datetime import datetime
 
 from telethon.tl.tlobject import TLObject
 from telethon.extensions import BinaryReader
@@ -25,6 +26,7 @@ def read_file(file_path: str, strip=True, raise_on_error=False) -> Union[str, No
 def b85size(data: bytes) -> int:
     return ceil(len(data) / 4) * 5
 
+EMTPY_VECTOR: bytes = struct.pack("<II", 0x1cb5c415, 0)
 
 def serialize_vector(vector: Sequence[TLObject]) -> bytes:
     # Ref: telethon.extensions.BinaryReader.tgread_vector
@@ -70,6 +72,14 @@ def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
         r += f" (@{user.username})"
     # print([name_part for name_part in (user.first_name, user.last_name) if name_part is not None])
     return r
+
+
+def render_datetime(time: Union[datetime, None] = None) -> str:
+    from .config import TIME_ZONE  # FIX
+
+    if time is None:
+        time = datetime.now(TIME_ZONE)
+    return str(time.astimezone(TIME_ZONE))
 
 
 # def serialize_vetor(vector: Iterable[TLObject], buffer: BinaryIO) -> bytes:

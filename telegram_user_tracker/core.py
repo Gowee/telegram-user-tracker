@@ -11,11 +11,18 @@ from telethon import TelegramClient, events
 from .client import client
 from . import contacts
 from .storage import MessageStorage
-from .utils import DummyFile, serialize_vector, deserialize_vector, render_user
+from .utils import (
+    DummyFile,
+    serialize_vector,
+    deserialize_vector,
+    EMTPY_VECTOR,
+    render_user,
+    render_datetime,
+)
 from .config import CHECK_INTERVAL, REPORT_CHANNEL
 
 logger = logging.getLogger(__name__)
-blockedUsersStorage = MessageStorage("me", "blocked_users")
+blockedUsersStorage = MessageStorage("me", "blocked_users", default=EMTPY_VECTOR)
 # runtimeConfigStorage = MessageStorage("me", "runtime_config")
 
 
@@ -53,10 +60,8 @@ async def handler_track(event):
         )
         return
     # print(repr(target))
-    await client.send_message(
-        REPORT_CHANNEL,
-        f"{(render_user(target))} / ID: {target.id} is under tracking, as requested by {render_user(requester)}.",
-        parse_mode="markdown",
+    await report(
+        f"🆕 {target.id} / {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
     )
     await contacts.block(target)
     # TODO: check return value for success
@@ -74,10 +79,8 @@ async def handler_ignore(event):
             f"{event.message.from_id} request to ignore {target} which is invalid: {e}"
         )
         return
-    await client.send_message(  
-        REPORT_CHANNEL,
-        f"{(render_user(target))} / ID: {target.id} is now ignored, as requested by {render_user(requester)}.",
-        parse_mode="markdown",
+    await report(
+        f"❌ {target.id} / {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
     )
     await contacts.unblock(target)
 
@@ -112,6 +115,18 @@ async def _extract_target_user_id(event) -> int:
             target = args
     return target
 
+
+async def report(message: str, *args, **kwargs):
+    """Send message to the `REPORT_CHANNEL`."""
+    return await client.send_message(
+        REPORT_CHANNEL,
+        message,
+        # parse_mode="markdown",
+        *args,
+        **kwargs,
+    )
+
+
 # fff = None
 
 
@@ -142,9 +157,13 @@ async def _extract_target_user_id(event) -> int:
 
 
 async def keep_tracking():
+    await aiosleep(3)
     while True:
         logger.info("Tracker is checking")
-        await check_and_report()
+        try:
+            await check_and_report()
+        except Exception:
+            logger.warning(f"Error when check_and_report", exc_info=True)
         await aiosleep(CHECK_INTERVAL)
 
 
@@ -152,18 +171,46 @@ async def keep_tracking():
 
 
 async def check_and_report():
+    print("k")
     d = await blockedUsersStorage.load()
+    # print("b")
+    # `deserialize_vector` may keepping waiting for reading stream if b is invalid, so there should
+    # have been a default value i.e. `EMPTY_VECTOR` there.
+    assert d
     previous_blocked = {user.id: user for user in deserialize_vector(d)}
-
+    # print("c")
     #  = {}  # set(json.loads(await storage.load()))
     now_blocked = []
     # newly_blocked = []
+    # print(previous_blocked)
     async for user in contacts.iter_blocked():
-        now_blocked.append(user)
-        if user in previous_blocked:
-            pass
+        if user.id in previous_blocked:
+            user_previous = previous_blocked[user.id]
+            pr = render_user(user_previous)
+            cr = render_user(user)
+            if pr != cr:
+                await report(
+                    f"🔠 {user.id} #changed (user)name:\n"
+                    f"{render_user(user_previous)} ➡️ {render_user(user)}"
+                )
+            if not user_previous.deleted and user.deleted:
+                await report(
+                    f"💥 {user.id} / {render_user(user_previous)} account #deleted\n"
+                    f"blocked at {render_datetime(user.date_blocked)}\n"
+                    f"now is at {render_datetime()}"
+                )
+            logger.debug(f"{user.id} has no significant status change")
         else:
-            pass
+            await report(
+                f"♻️ {user.id} {render_user(user)} is #newly added to the blocklist:\n"
+                f"now is at {render_datetime()}"
+            )
+            logger.debug(f"{user.id} is newly found")
+            # TODO: avoid race condition
             # newly_blocked.append(user)
+        now_blocked.append(user)
+    print(now_blocked)
+    if (serialized := serialize_vector(now_blocked)) != d:
+        await blockedUsersStorage.store(serialized)
 
     # Update

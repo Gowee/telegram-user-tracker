@@ -8,6 +8,7 @@ authors = ["Hung-I Wang <whygowe@gmail.com>"]
 python = "^3.8"
 telethon = "^1.16.4"
 cryptg = "^0.2.post1"
+python-dateutil = "^2.8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
