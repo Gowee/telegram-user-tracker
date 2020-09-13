@@ -190,8 +190,9 @@ async def check_and_report():
             cr = render_user(user)
             if pr != cr:
                 await report(
-                    f"🔠 {user.id} #changed (user)name:\n"
-                    f"{render_user(user_previous)} ➡️ {render_user(user)}"
+                    f"🔠 {user.id} {render_user(user_previous)} #changed (user)name:\n"
+                    f"to ➡️ {render_user(user)}\n"
+                    f"now is at {render_datetime()}"
                 )
             if not user_previous.deleted and user.deleted:
                 await report(
