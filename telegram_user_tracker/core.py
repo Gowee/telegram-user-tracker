@@ -89,14 +89,13 @@ async def _extract_target_user_id(event) -> int:
                     # in a public group
                     chat, msgid = url[2].lstrip("/").split("/")
 
-                print(url)
                 msg = await client.get_messages(chat, ids=int(msgid))
                 target = msg.from_id
             else:
                 # This works only for cases where the session has cached the entities of the target.
                 # Ref: https://docs.telethon.dev/en/latest/concepts/entities.html
                 target = int(args)  # if it is a id
-        except ValueError as e:
+        except ValueError:
             target = args
     return target
 

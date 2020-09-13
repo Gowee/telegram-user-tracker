@@ -32,13 +32,10 @@ EMTPY_VECTOR: bytes = struct.pack("<II", 0x1CB5C415, 0)
 
 def serialize_vector(vector: Sequence[TLObject]) -> bytes:
     # Ref: telethon.extensions.BinaryReader.tgread_vector
-    # b = BytesIO()
-    # b.write()
-    # struct.pack_into(b, vector,)
+    # TODO: how to use `struct.pack_into` to take a writable buffer as the output?
     s = struct.pack("<II", 0x1CB5C415, len(vector)) + b"".join(
         tlobject._bytes() for tlobject in vector
     )
-    # print(s)
     return s
 
 
@@ -60,19 +57,15 @@ def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
     else:
         render_mention = _render_mention_markdown
     name = " ".join(
-        [
-            name_part
-            for name_part in (user.first_name, user.last_name)
-            if name_part is not None
-        ]
+        name_part
+        for name_part in (user.first_name, user.last_name)
+        if name_part is not None
     )
     if not name or name.isspace():
         name = str(user.id)
     r = render_mention(user.id, name)
-    # print("!",  user.username)
     if user.username:
         r += f" (@{user.username})"
-    # print([name_part for name_part in (user.first_name, user.last_name) if name_part is not None])
     return r
 
 
@@ -82,12 +75,6 @@ def render_datetime(time: Union[datetime, None] = None) -> str:
     if time is None:
         time = datetime.now(TIME_ZONE)
     return str(time.astimezone(TIME_ZONE))
-
-
-# def serialize_vetor(vector: Iterable[TLObject], buffer: BinaryIO) -> bytes:
-#     b = BytesIO()
-#     b.write()
-#     struct.pack_into(b, vector,)
 
 
 class DummyFile(BytesIO):
