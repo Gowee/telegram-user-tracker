@@ -138,7 +138,7 @@ async def handler_list_admins(event):
     admins = []
     for user_id in await get_admins(refresh=True):
         admins.append(await client.get_entity(user_id))
-    msg = f"Currently admins list, as requested by {render_user(requester)}:\n"
+    msg = f"Admins list, as requested by {render_user(requester)}:\n"
     msg += "\n".join(f"{render_user(user_id)}" for user_id in admins)
     #     msg += "\n".join(f"{render_user(await client.get_entity(user_id))}" for user_id in admins)
     # TypeError: can only join an iterable ?
