@@ -29,7 +29,7 @@ class MessageStorage:
     message: Message
     default: bytes
 
-    def __init__(self, chat: EntitiesLike, key: str, default: bytes=b''):
+    def __init__(self, chat: EntitiesLike, key: str, default: bytes = b""):
         self.key = key
         self.ident = f"#message_storage_{key}"
         self.chat = chat
@@ -56,7 +56,8 @@ class MessageStorage:
         else:
             logger.debug(f"Creating a new message for {self!r}")
             self.message = await client.send_message(
-                self.chat, f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```"
+                self.chat,
+                f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```",
             )
 
     async def load(self) -> bytes:

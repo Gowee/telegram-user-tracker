@@ -6,8 +6,6 @@ from urllib.parse import urlparse
 
 from telethon import TelegramClient, events
 
-# from telethon.tl.types import InputMediaEmpty
-
 from .client import client
 from . import contacts
 from .storage import MessageStorage
@@ -26,25 +24,14 @@ blockedUsersStorage = MessageStorage("me", "blocked_users", default=EMTPY_VECTOR
 # runtimeConfigStorage = MessageStorage("me", "runtime_config")
 
 
-# @client.on(events.NewMessage(pattern="(?i).*Hello"))
-# async def handler(event):
-#     global count
-#     await event.reply("Hey!")
-#     # count += 1
-#     await blockedUsersStorage.store(("Count = " + str(count)).encode("utf-8"))
+@client.on(events.NewMessage(pattern="(?i).*Hello"))
+async def handler(event):
+    await event.reply("Hey!")
 
 
 @client.on(events.NewMessage(pattern="(?i).*test"))
 async def handler_test(event):
-    # print(await contacts.get_blocked())
-    # blocked = []
-    # async for contact in contacts.iter_blocked():
-    #     blocked.append(contact)
-    # print(blocked)
-    # serde = deserialize_vector(serialize_vector(blocked))
-    # print(serde)
-    print(event)
-    print(event.message)
+    logger.debug(event)
 
 
 @client.on(events.NewMessage(pattern=r"(?i)[!/]track(?P<args>.*)"))
@@ -59,9 +46,8 @@ async def handler_track(event):
             f"{event.message.from_id} request to track {target} which is invalid: {e}"
         )
         return
-    # print(repr(target))
     await report(
-        f"🆕 {target.id} / {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
+        f"🆕 {target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
     )
     await contacts.block(target)
     # TODO: check return value for success
@@ -69,7 +55,6 @@ async def handler_track(event):
 
 @client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
 async def handler_ignore(event):
-    # user = re.search(r"unblock (.+)", event.message.message).group(1)
     requester = await client.get_entity(event.message.from_id)
     target = await _extract_target_user_id(event)
     try:
@@ -80,7 +65,7 @@ async def handler_ignore(event):
         )
         return
     await report(
-        f"❌ {target.id} / {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
+        f"❌ {target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
     )
     await contacts.unblock(target)
 
@@ -127,35 +112,6 @@ async def report(message: str, *args, **kwargs):
     )
 
 
-# fff = None
-
-
-# @client.on(events.NewMessage(pattern="(?i).*ta"))
-# async def handler_ta(event):
-#     # print(await contacts.get_blocked())
-#     # print(await contacts.get_blocked(0, 5))
-#     # print(await contacts.get_blocked(5, 100))
-#     global fff
-#     fff = await client.send_message(126777601, file=DummyFile("test.txt", b"testttt"))
-
-
-# @client.on(events.NewMessage(pattern="(?i).*tb"))
-# async def handler_tb(event):
-#     # print(await contacts.get_blocked())
-#     # print(await contacts.get_blocked(0, 5))
-#     # print(await contacts.get_blocked(5, 100))
-#     await client.delete_messages(126777601, fff)
-#     print(fff.media.ttl_seconds)
-
-
-# @client.on(events.NewMessage(pattern="(?i).*tc"))
-# async def handler_tc(event):
-#     # print(await contacts.get_blocked())
-#     # print(await contacts.get_blocked(0, 5))
-#     # print(await contacts.get_blocked(5, 100))
-#     print(await client.download_media(fff, file=bytes))
-
-
 async def keep_tracking():
     await aiosleep(3)
     while True:
@@ -167,22 +123,13 @@ async def keep_tracking():
         await aiosleep(CHECK_INTERVAL)
 
 
-# # async def get_previous()
-
-
 async def check_and_report():
-    print("k")
     d = await blockedUsersStorage.load()
-    # print("b")
     # `deserialize_vector` may keepping waiting for reading stream if b is invalid, so there should
     # have been a default value i.e. `EMPTY_VECTOR` there.
     assert d
     previous_blocked = {user.id: user for user in deserialize_vector(d)}
-    # print("c")
-    #  = {}  # set(json.loads(await storage.load()))
     now_blocked = []
-    # newly_blocked = []
-    # print(previous_blocked)
     async for user in contacts.iter_blocked():
         if user.id in previous_blocked:
             user_previous = previous_blocked[user.id]
@@ -208,10 +155,6 @@ async def check_and_report():
             )
             logger.debug(f"{user.id} is newly found")
             # TODO: avoid race condition
-            # newly_blocked.append(user)
         now_blocked.append(user)
-    print(now_blocked)
     if (serialized := serialize_vector(now_blocked)) != d:
         await blockedUsersStorage.store(serialized)
-
-    # Update

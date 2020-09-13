@@ -46,7 +46,6 @@ class BlockedUser(User):
 
     @classmethod
     def from_reader(cls, reader):
-        # print(hex(reader.read_int(signed=False)), hex(cls.SUBCLASS_OF_ID))
         assert reader.read_int(signed=False) == cls.SUBCLASS_OF_ID
         user = super().from_reader(reader)
         user.date_blocked = reader.read_long(signed=False)
@@ -66,7 +65,6 @@ async def iter_blocked(offset=0, _chunk_size=100) -> AsyncGenerator[BlockedUser,
     while True:
         d = await get_blocked(offset, _chunk_size)
         dates = {blocked.user_id: blocked.date for blocked in d.blocked}
-        # users = {user.id: user for user in d.users}
         for user in d.users:
             user.date_blocked = dates[user.id]
             user.__class__ = BlockedUser

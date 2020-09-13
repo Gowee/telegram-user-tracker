@@ -26,7 +26,9 @@ def read_file(file_path: str, strip=True, raise_on_error=False) -> Union[str, No
 def b85size(data: bytes) -> int:
     return ceil(len(data) / 4) * 5
 
-EMTPY_VECTOR: bytes = struct.pack("<II", 0x1cb5c415, 0)
+
+EMTPY_VECTOR: bytes = struct.pack("<II", 0x1CB5C415, 0)
+
 
 def serialize_vector(vector: Sequence[TLObject]) -> bytes:
     # Ref: telethon.extensions.BinaryReader.tgread_vector
