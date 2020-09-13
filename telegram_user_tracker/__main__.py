@@ -8,6 +8,7 @@ logging.basicConfig(
 )
 
 from .core import client, keep_tracking
+from .utils import render_user
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +17,9 @@ logger.info("Up and running...")
 
 async def main():
     await client.connect()
-    print(1)
-    tracking_task = asyncio.create_task(keep_tracking())
-    print(2)
+    me = await client.get_me()
+    logger.info(f"Current acccount: {render_user(me)}")
+    _tracking_task = asyncio.create_task(keep_tracking())
     await client.run_until_disconnected()
 
 

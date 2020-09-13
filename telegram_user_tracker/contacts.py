@@ -49,7 +49,6 @@ class BlockedUser(User):
         user = super().from_reader(reader)
         user.date_blocked = reader.read_long(signed=False)
         user.__class__ = BlockedUser
-        print(user)
         return user
 
 

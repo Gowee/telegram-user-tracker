@@ -36,7 +36,7 @@ async def handler_test(event):
 
 @client.on(events.NewMessage(pattern=r"(?i)[!/]track(?P<args>.*)"))
 async def handler_track(event):
-    print(event)
+    logger.debug(event)
     requester = await client.get_entity(event.message.from_id)
     target = await _extract_target_user_id(event)
     try:
