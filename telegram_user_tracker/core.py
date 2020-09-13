@@ -3,6 +3,7 @@ import json
 import logging
 from asyncio import sleep as aiosleep
 from urllib.parse import urlparse
+import functools
 
 from telethon import TelegramClient, events
 
@@ -17,7 +18,8 @@ from .utils import (
     render_user,
     render_datetime,
 )
-from .config import CHECK_INTERVAL, REPORT_CHANNEL
+from .config import CHECK_INTERVAL, REPORT_CHANNEL, ROOT_ADMIN
+from .auth import get_admins, add_admin, remove_admin, for_admins_only
 
 logger = logging.getLogger(__name__)
 blockedUsersStorage = MessageStorage("me", "blocked_users", default=EMTPY_VECTOR)
@@ -31,10 +33,11 @@ async def handler(event):
 
 @client.on(events.NewMessage(pattern="(?i).*test"))
 async def handler_test(event):
-    logger.debug(event)
+    logger.info(event)
 
 
 @client.on(events.NewMessage(pattern=r"(?i)[!/]track(?P<args>.*)"))
+@for_admins_only(root=False)
 async def handler_track(event):
     logger.debug(event)
     requester = await client.get_entity(event.message.from_id)
@@ -47,13 +50,14 @@ async def handler_track(event):
         )
         return
     await report(
-        f"🆕 {target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
+        f"➕ #u{target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
     )
     await contacts.block(target)
     # TODO: check return value for success
 
 
 @client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
+@for_admins_only(root=False)
 async def handler_ignore(event):
     requester = await client.get_entity(event.message.from_id)
     target = await _extract_target_user_id(event)
@@ -65,9 +69,80 @@ async def handler_ignore(event):
         )
         return
     await report(
-        f"❌ {target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
+        f"➖ #u{target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
     )
     await contacts.unblock(target)
+
+
+@client.on(events.NewMessage(pattern=r"(?i)[!/]list[_\- ]tracked(?P<args>.*)"))
+@for_admins_only(root=False)
+async def handler_list_tracked(event):
+    requester = await client.get_entity(event.message.from_id)
+    d = await blockedUsersStorage.load()
+    assert d
+    blocked = deserialize_vector(d)
+    msg = f"Currently tracking list, as requested by {render_user(requester)} at {render_datetime()}:\n"
+    msg += "\n".join(f"#u{user.id} {render_user(user)}" for user in blocked)
+    await report(msg)
+
+
+@client.on(events.NewMessage(pattern="(?i)[!/]elevate(?P<args>.*)"))
+@for_admins_only(root=True)
+async def handler_elevate(event):
+    requester = await client.get_entity(event.message.from_id)
+    target = await _extract_target_user_id(event)
+    try:
+        target = await client.get_entity(target)
+    except ValueError as e:
+        logger.info(
+            f"{render_user(requester)} requests to elevate {target} which is invalid: {e}"
+        )
+        return
+    if await add_admin(target.id):
+        await report(
+            f"⚙️ {(render_user(target))} has been elevated to admin, as requested by {render_user(requester)}."
+        )
+    else:
+        logging.info(
+            f"{render_user(requester)} requests to elevate {render_user(target)} to admin, but it fails"
+        )
+
+
+@client.on(events.NewMessage(pattern="(?i)[!/]lift(?P<args>.*)"))
+@for_admins_only(root=True)
+async def handler_lift(event):
+    requester = await client.get_entity(event.message.from_id)
+    target = await _extract_target_user_id(event)
+    try:
+        target = await client.get_entity(target)
+    except ValueError as e:
+        logger.info(
+            f"{render_user(requester)} requests to lift admin privileges of {target} which is invalid: {e}"
+        )
+        return
+    if await remove_admin(target.id):
+        await report(
+            f"⚙️ {(render_user(target))} 's admin privileges has been lifted, "
+            f"as requested by {render_user(requester)}."
+        )
+    else:
+        logging.info(
+            f"{render_user(requester)} requests to lift admin privileges of {render_user(target)} to admin, but it fails"
+        )
+
+
+@client.on(events.NewMessage(pattern=r"(?i)[!/]list[_\- ]admins(?P<args>.*)"))
+@for_admins_only(root=False)
+async def handler_list_admins(event):
+    requester = await client.get_entity(event.message.from_id)
+    admins = []
+    for user_id in await get_admins(refresh=True):
+        admins.append(await client.get_entity(user_id))
+    msg = f"Currently admins list, as requested by {render_user(requester)}:\n"
+    msg += "\n".join(f"{render_user(user_id)}" for user_id in admins)
+    #     msg += "\n".join(f"{render_user(await client.get_entity(user_id))}" for user_id in admins)
+    # TypeError: can only join an iterable ?
+    await report(msg)
 
 
 async def _extract_target_user_id(event) -> int:
@@ -136,20 +211,20 @@ async def check_and_report():
             cr = render_user(user)
             if pr != cr:
                 await report(
-                    f"🔠 {user.id} {render_user(user_previous)} #changed (user)name:\n"
+                    f"🔠 #u{user.id} {render_user(user_previous)} #changed (user)name:\n"
                     f"to ➡️ {render_user(user)}\n"
                     f"now is at {render_datetime()}"
                 )
             if not user_previous.deleted and user.deleted:
                 await report(
-                    f"💥 {user.id} / {render_user(user_previous)} account #deleted\n"
+                    f"💥 #u{user.id} / {render_user(user_previous)} account #deleted\n"
                     f"blocked at {render_datetime(user.date_blocked)}\n"
                     f"now is at {render_datetime()}"
                 )
             logger.debug(f"{user.id} has no significant status change")
         else:
             await report(
-                f"♻️ {user.id} {render_user(user)} is #newly added to the blocklist:\n"
+                f"🆕 #u{user.id} {render_user(user)} is #newly added to the blocklist:\n"
                 f"now is at {render_datetime()}"
             )
             logger.debug(f"{user.id} is newly found")
