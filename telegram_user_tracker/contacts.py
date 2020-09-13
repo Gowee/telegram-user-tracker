@@ -19,9 +19,8 @@ class BlockedUser(User):
     """A wrapper around `telethon.tl.types.User` with a extra field of the datetime that the user
     gets blocked"""
 
-    # WARNING: The CONSTRUCTOR_ID is the same as the super() while the serde binary format is not.
-    #          But as it is not listed in telethon.tl.allobjects.tlobjects, there won't be problems
-    #          unless it is unexpectedly serde elsewhere.
+    # Note: The BlockedUser / .CONSTRUCTOR_ID has to be listed in telethon.tl.allobjects.tlobjects
+    #       for the serde in BinaryReader to work properly
     CONSTRUCTOR_ID = 0xF0F0F0F0
     SUBCLASS_OF_ID = User.CONSTRUCTOR_ID
 
