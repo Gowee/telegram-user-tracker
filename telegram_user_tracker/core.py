@@ -1,11 +1,13 @@
+from typing import Sequence
 import re
 import json
 import logging
-from asyncio import sleep as aiosleep
+from asyncio import sleep as aiosleep, Lock
 from urllib.parse import urlparse
 import functools
 
 from telethon import TelegramClient, events
+from telethon.tl.types import User
 
 from .client import client
 from . import contacts
@@ -49,11 +51,12 @@ async def handler_track(event):
             f"{event.message.from_id} request to track {target} which is invalid: {e}"
         )
         return
+    await contacts.block(target)
+    # TODO: check return value for success
+    await check_and_report(users_ignored=(target.id,))
     await report(
         f"➕ #u{target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
     )
-    await contacts.block(target)
-    # TODO: check return value for success
 
 
 @client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
@@ -68,10 +71,11 @@ async def handler_ignore(event):
             f"{event.message.from_id} request to ignore {target} which is invalid: {e}"
         )
         return
+    await contacts.unblock(target)
+    await check_and_report(users_ignored=(target.id,))
     await report(
         f"➖ #u{target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
     )
-    await contacts.unblock(target)
 
 
 @client.on(events.NewMessage(pattern=r"(?i)[!/]list[_\- ]tracked(?P<args>.*)"))
@@ -197,38 +201,42 @@ async def keep_tracking():
         await aiosleep(CHECK_INTERVAL)
 
 
-async def check_and_report():
-    d = await blockedUsersStorage.load()
-    # `deserialize_vector` may keepping waiting for reading stream if b is invalid, so there should
-    # have been a default value i.e. `EMPTY_VECTOR` there.
-    assert d
-    previous_blocked = {user.id: user for user in deserialize_vector(d)}
-    now_blocked = []
-    async for user in contacts.iter_blocked():
-        if user.id in previous_blocked:
-            user_previous = previous_blocked[user.id]
-            pr = render_user(user_previous)
-            cr = render_user(user)
-            if pr != cr:
+check_lock = Lock()
+
+
+async def check_and_report(users_ignored: Sequence[int] = tuple()):
+    async with check_lock:
+        d = await blockedUsersStorage.load()
+        # `deserialize_vector` may keepping waiting for reading stream if b is invalid, so there should
+        # have been a default value i.e. `EMPTY_VECTOR` there.
+        assert d
+        previous_blocked = {user.id: user for user in deserialize_vector(d)}
+        now_blocked = []
+        async for user in contacts.iter_blocked():
+            if user.id in previous_blocked:
+                user_previous = previous_blocked[user.id]
+                pr = render_user(user_previous)
+                cr = render_user(user)
+                if pr != cr:
+                    await report(
+                        f"🔠 #u{user.id} {pr} #changed (user)name:\n"
+                        f"to ➡️ {cr}\n"
+                        f"now is at {render_datetime()}"
+                    )
+                if not user_previous.deleted and user.deleted:
+                    await report(
+                        f"💥 #u{user.id} / {cr} account #deleted\n"
+                        f"blocked at {render_datetime(user.date_blocked)}\n"
+                        f"now is at {render_datetime()}"
+                    )
+                logger.debug(f"{user.id} has no significant status change")
+            elif user.id not in users_ignored:
                 await report(
-                    f"🔠 #u{user.id} {render_user(user_previous)} #changed (user)name:\n"
-                    f"to ➡️ {render_user(user)}\n"
+                    f"🆕 #u{user.id} {render_user(user)} is #newly added to the blocklist:\n"
                     f"now is at {render_datetime()}"
                 )
-            if not user_previous.deleted and user.deleted:
-                await report(
-                    f"💥 #u{user.id} / {render_user(user_previous)} account #deleted\n"
-                    f"blocked at {render_datetime(user.date_blocked)}\n"
-                    f"now is at {render_datetime()}"
-                )
-            logger.debug(f"{user.id} has no significant status change")
-        else:
-            await report(
-                f"🆕 #u{user.id} {render_user(user)} is #newly added to the blocklist:\n"
-                f"now is at {render_datetime()}"
-            )
-            logger.debug(f"{user.id} is newly found")
-            # TODO: avoid race condition
-        now_blocked.append(user)
-    if (serialized := serialize_vector(now_blocked)) != d:
-        await blockedUsersStorage.store(serialized)
+                logger.debug(f"{user.id} is newly found")
+                # TODO: avoid race condition
+            now_blocked.append(user)
+        if (serialized := serialize_vector(now_blocked)) != d:
+            await blockedUsersStorage.store(serialized)
