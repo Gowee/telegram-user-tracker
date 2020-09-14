@@ -159,6 +159,7 @@ async def handler_clear_admins(event):
     )
     logger.info(f"{render_user(requester)} requests to list all admins' privileges")
 
+
 async def _extract_target_user_id(event) -> int:
     if reply_to := await event.message.get_reply_message():
         # Targeted at the sender of a replied-to messsage, with no extra args needed.

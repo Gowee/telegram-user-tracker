@@ -27,7 +27,9 @@ async def main():
     logger.debug(f"dialogs: {_dialogs}")
     try:
         _report_channel_participants = await client.get_participants(REPORT_CHANNEL)
-        logger.debug(f"participants of the report channel: {_report_channel_participants}")
+        logger.debug(
+            f"participants of the report channel: {_report_channel_participants}"
+        )
     except ValueError:
         pass
     _tracking_task = asyncio.create_task(keep_tracking())
