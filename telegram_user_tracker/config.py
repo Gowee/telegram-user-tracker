@@ -20,6 +20,8 @@ REPORT_CHANNEL = read_file("./.report_channel") or os.environ.get(
     "REPORT_CHANNEL", "me"
 )
 ROOT_ADMIN = read_file("./.ROOT_ADMIN") or os.environ.get("ROOT_ADMIN", None)
+if ROOT_ADMIN:
+    ROOT_ADMIN = int(ROOT_ADMIN)
 TIME_ZONE = timezone.gettz(os.environ.get("TIMEZONE", "Asia/Shanghai"))
 
 try:

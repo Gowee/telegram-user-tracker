@@ -23,6 +23,11 @@ async def main():
     logger.info(
         f"Report channel id: {REPORT_CHANNEL}, additional root admins: {ROOT_ADMIN}"
     )
+    _dialogs = await client.get_dialogs()
+    try:
+        _report_channel_participants = await client.get_participants(REPORT_CHANNEL)
+    except ValueError:
+        pass
     _tracking_task = asyncio.create_task(keep_tracking())
     await client.run_until_disconnected()
 
