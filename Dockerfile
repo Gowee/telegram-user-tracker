@@ -10,4 +10,4 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false; \
     poetry install
 COPY . .
-ENTRYPOINT ["/usr/bin/env python -m telegram_user_tracker"]
+ENTRYPOINT ["/usr/bin/env", "python", "-m", "telegram_user_tracker"]
