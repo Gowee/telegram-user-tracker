@@ -104,11 +104,11 @@ async def handler_elevate(event):
         return
     if await add_admin(target.id):
         await report(
-            f"⚙️ {(render_user(target))} has been elevated to admin, as requested by {render_user(requester)}."
+            f"⚙️ {(render_user(target))} has been elevated into admin, as requested by {render_user(requester)}."
         )
     else:
         logging.info(
-            f"{render_user(requester)} requests to elevate {render_user(target)} to admin, but it fails"
+            f"{render_user(requester)} requests to elevate {render_user(target)} into admin, but it fails"
         )
 
 
