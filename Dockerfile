@@ -10,5 +10,4 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false; \
     poetry install
 COPY . .
-RUN chmod +x lowvoicebot.py
-ENTRYPOINT ["/app/lowvoicebot.py"]
+ENTRYPOINT ["python -m telegram_user_tracker"]
