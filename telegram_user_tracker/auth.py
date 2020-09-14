@@ -56,6 +56,10 @@ async def remove_admin(user_id: int) -> bool:
     logger.info(f"Admin privileges lifted: {user_id}")
     return True
 
+async def clear_admins():
+    global admins
+    await adminsStorage.reset()
+
 
 def for_admins_only(root=False):
     # TODO: typing?

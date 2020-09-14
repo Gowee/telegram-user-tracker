@@ -120,3 +120,7 @@ class MessageStorage:
                     self.message,
                     text=f"{self.ident} ```\n::{b85encode(data).decode('latin-1')}::\n```",
                 )
+
+    async def reset(self):
+        await self.ensure_prepared()
+        await client.delete_messages(self.chat, self.message.id)

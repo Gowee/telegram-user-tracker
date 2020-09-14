@@ -21,7 +21,7 @@ from .utils import (
     render_datetime,
 )
 from .config import CHECK_INTERVAL, REPORT_CHANNEL, ROOT_ADMIN
-from .auth import get_admins, add_admin, remove_admin, for_admins_only
+from .auth import get_admins, add_admin, remove_admin, clear_admins, for_admins_only
 
 logger = logging.getLogger(__name__)
 blockedUsersStorage = MessageStorage("me", "blocked_users", default=EMTPY_VECTOR)
@@ -148,6 +148,16 @@ async def handler_list_admins(event):
     # TypeError: can only join an iterable ?
     await report(msg)
 
+
+@client.on(events.NewMessage(pattern="(?i)[!/]clear[\-_ ]admins(?P<args>.*)"))
+@for_admins_only(root=True)
+async def handler_clear_admins(event):
+    await clear_admins()
+    requester = await client.get_entity(event.message.from_id)
+    await report(
+        f"⚠️ All admins privileges are lifted as requested by {render_user(requester)}."
+    )
+    logger.info(f"{render_user(requester)} requests to list all admins' privileges")
 
 async def _extract_target_user_id(event) -> int:
     if reply_to := await event.message.get_reply_message():
