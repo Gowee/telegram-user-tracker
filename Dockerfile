@@ -6,8 +6,10 @@ RUN set -eux; \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; \
     pip install poetry
 WORKDIR /app
+VOLUME ["/app/session"]
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false; \
     poetry install
 COPY . .
-ENTRYPOINT ["/usr/bin/env", "python", "-m", "telegram_user_tracker"]
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]

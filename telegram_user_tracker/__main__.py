@@ -30,5 +30,3 @@ async def main():
 with client:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
-    # client.loop.run_until_complete()
