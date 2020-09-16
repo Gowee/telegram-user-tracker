@@ -257,9 +257,7 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
             now_blocked.append(user)
         if (serialized := serialize_vector(now_blocked)) != d:
             await blockedUsersStorage.store(serialized)
-            tracked_user_ids = {user.id for user in previous_blocked}
-        else:
-            tracked_user_ids = {user.id for user in now_blocked}
+        tracked_user_ids = {user.id for user in now_blocked}
 
 @client.on(events.ChatAction(func=lambda event: event.user_joined or event.user_added))
 async def handler_user_join(event):
