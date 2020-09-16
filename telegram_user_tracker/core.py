@@ -18,6 +18,7 @@ from .utils import (
     deserialize_vector,
     EMTPY_VECTOR,
     render_user,
+    render_chat,
     render_datetime,
 )
 from .config import CHECK_INTERVAL, REPORT_CHANNEL, ROOT_ADMIN
@@ -189,7 +190,6 @@ async def _extract_target_user_id(event) -> int:
             target = args
     return target
 
-
 async def report(message: str, *args, **kwargs):
     """Send message to the `REPORT_CHANNEL`."""
     return await client.send_message(
@@ -213,9 +213,11 @@ async def keep_tracking():
 
 
 check_lock = Lock()
-
+tracked_user_ids = {}
 
 async def check_and_report(users_ignored: Sequence[int] = tuple()):
+    #global check_lock
+    global tracked_user_ids
     async with check_lock:
         d = await blockedUsersStorage.load()
         # `deserialize_vector` may keepping waiting for reading stream if b is invalid, so there should
@@ -255,3 +257,18 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
             now_blocked.append(user)
         if (serialized := serialize_vector(now_blocked)) != d:
             await blockedUsersStorage.store(serialized)
+            tracked_user_ids = {user.id for user in previous_blocked}
+        else:
+            tracked_user_ids = {user.id for user in now_blocked}
+
+@client.on(events.ChatAction(func=lambda event: event.user_joined or event.user_added))
+async def handler_user_join(event):
+    # TODO: there is possibility that some of joining messages are discarded
+    async with check_lock:
+        for user in await event.get_users():
+            if user.id in tracked_user_ids:
+                chat = await event.get_chat()
+                await report(f"❕ #u{user.id} {render_user(user)} joined {render_chat(chat)}\nnow is at {render_datetime()}")
+
+# TODO: abstract blocked users manager like .contacts or .auth so that to avoid manually managing
+#       tracked_user_ids

@@ -6,7 +6,7 @@ from datetime import datetime
 
 from telethon.tl.tlobject import TLObject
 from telethon.extensions import BinaryReader
-from telethon.tl.types import User
+from telethon.tl.types import User, Channel, Chat
 
 
 def read_file(file_path: str, strip=True, raise_on_error=False) -> Union[str, None]:
@@ -68,6 +68,16 @@ def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
         r += f" (@{user.username})"
     return r
 
+
+def render_chat(chat: Union[Chat, Channel, User]) -> str:
+    if isinstance(chat, Chat):
+        return f"{chat.title} ({chat.id})"
+    elif isinstance(chat, Channel):
+        return f"{chat.title} ({('@' + chat.username) or chat.id})"
+    elif isinstance(chat, User):
+        return render_user(chat)
+    else:
+        raise ValueError("chat is not of type `User`, `Channel` or `Chat`")
 
 def render_datetime(time: Union[datetime, None] = None) -> str:
     from .config import TIME_ZONE  # FIX

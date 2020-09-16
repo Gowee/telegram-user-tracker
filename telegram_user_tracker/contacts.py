@@ -1,5 +1,6 @@
 from typing import AsyncGenerator
 from datetime import datetime
+import struct
 
 import telethon
 from telethon import TelegramClient
@@ -9,10 +10,7 @@ from telethon.tl.functions import contacts as requests
 from telethon.hints import EntitiesLike
 from telethon.extensions import BinaryReader
 
-# from
-
 from .client import client
-from .utils import struct
 
 
 class BlockedUser(User):
