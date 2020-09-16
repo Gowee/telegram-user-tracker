@@ -149,7 +149,7 @@ async def handler_list_admins(event):
     await report(msg)
 
 
-@client.on(events.NewMessage(pattern="(?i)[!/]clear[\-_ ]admins(?P<args>.*)"))
+@client.on(events.NewMessage(pattern=r"(?i)[!/]clear[\-_ ]admins(?P<args>.*)"))
 @for_admins_only(root=True)
 async def handler_clear_admins(event):
     await clear_admins()
@@ -228,20 +228,24 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
                 user_previous = previous_blocked[user.id]
                 pr = render_user(user_previous)
                 cr = render_user(user)
-                if pr != cr:
-                    await report(
-                        f"🔠 #u{user.id} {pr} #changed (user)name:\n"
-                        f"to ➡️ {cr}\n"
-                        f"now is at {render_datetime()}"
-                    )
                 if not user_previous.deleted and user.deleted:
                     await report(
                         f"💥 #u{user.id} / {cr} account #deleted\n"
                         f"blocked at {render_datetime(user.date_blocked)}\n"
                         f"now is at {render_datetime()}"
                     )
+                elif pr != cr:
+                    # If the account is deleted, its (user)names get cleared, in which case there
+                    # is no need to report the name change
+                    await report(
+                        f"🔠 #u{user.id} {pr} #changed (user)name:\n"
+                        f"to ➡️ {cr}\n"
+                        f"now is at {render_datetime()}"
+                    )
                 logger.debug(f"{user.id} has no significant status change")
             elif user.id not in users_ignored:
+                # TODO: when a account is deleted and recreated within one check interval, the
+                # recreation message should be reported after the deletion message
                 await report(
                     f"🆕 #u{user.id} {render_user(user)} is #newly added to the blocklist:\n"
                     f"now is at {render_datetime()}"
