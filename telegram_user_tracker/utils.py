@@ -79,6 +79,7 @@ def render_chat(chat: Union[Chat, Channel, User]) -> str:
     else:
         raise ValueError("chat is not of type `User`, `Channel` or `Chat`")
 
+
 def render_datetime(time: Union[datetime, None] = None) -> str:
     from .config import TIME_ZONE  # FIX
 
