@@ -29,12 +29,14 @@ blockedUsersStorage = MessageStorage("me", "blocked_users", default=EMTPY_VECTOR
 # runtimeConfigStorage = MessageStorage("me", "runtime_config")
 
 
-@client.on(events.NewMessage(pattern="(?i).*Hello"))
+@client.on(events.NewMessage(pattern=r"(?i).*Hello[, !] ?tracker"))
+@for_admins_only()
 async def handler(event):
     await event.reply("Hey!")
 
 
-@client.on(events.NewMessage(pattern="(?i).*test"))
+@client.on(events.NewMessage(pattern=r"(?i).*test"))
+@for_admins_only()
 async def handler_test(event):
     logger.info(event)
 
