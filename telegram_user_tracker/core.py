@@ -272,7 +272,7 @@ async def handler_user_join(event):
             if user.id in tracked_user_ids:
                 chat = await event.get_chat()
                 await report(
-                    f"❕ #u{user.id} {render_user(user)} joined {render_chat(chat)}\nnow is at {render_datetime()}"
+                    f"❕ #u{user.id} {render_user(user)} #joined {render_chat(chat)}\nnow is at {render_datetime()}"
                 )
 
 
