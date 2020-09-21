@@ -58,7 +58,7 @@ async def handler_track(event):
     # TODO: check return value for success
     await check_and_report(users_ignored=(target.id,))
     await report(
-        f"➕ #u{target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
+        f"➕ #u_{target.id} {(render_user(target))} is under #tracking, as requested by {render_user(requester)}."
     )
 
 
@@ -77,7 +77,7 @@ async def handler_ignore(event):
     await contacts.unblock(target)
     await check_and_report(users_ignored=(target.id,))
     await report(
-        f"➖ #u{target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
+        f"➖ #u_{target.id} {(render_user(target))} is now #ignored, as requested by {render_user(requester)}."
     )
 
 
@@ -89,7 +89,7 @@ async def handler_list_tracked(event):
     assert d
     blocked = deserialize_vector(d)
     msg = f"Currently tracking list, as requested by {render_user(requester)} at {render_datetime()}:\n"
-    msg += "\n".join(f"#u{user.id} {render_user(user)}" for user in blocked)
+    msg += "\n".join(f"#u_{user.id} {render_user(user)}" for user in blocked)
     await report(msg)
 
 
@@ -236,7 +236,7 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
                 cr = render_user(user)
                 if not user_previous.deleted and user.deleted:
                     await report(
-                        f"💥 #u{user.id} / {pr} account #deleted\n"
+                        f"💥 #u_{user.id} / {pr} account #deleted\n"
                         f"tracking since {render_datetime(user.date_blocked)}\n"
                         f"now is at {render_datetime()}"
                     )
@@ -244,7 +244,7 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
                     # If the account is deleted, its (user)names get cleared, in which case there
                     # is no need to report the name change
                     await report(
-                        f"🔠 #u{user.id} {pr} #changed (user)name:\n"
+                        f"🔠 #u_{user.id} {pr} #changed (user)name:\n"
                         f"to ➡️ {cr}\n"
                         f"now is at {render_datetime()}"
                     )
@@ -253,7 +253,7 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
                 # TODO: when a account is deleted and recreated within one check interval, the
                 # recreation message should be reported after the deletion message
                 await report(
-                    f"🆕 #u{user.id} {render_user(user)} is #newly found:\n"
+                    f"🆕 #u_{user.id} {render_user(user)} is #newly found:\n"
                     f"now is at {render_datetime()}"
                 )
                 logger.debug(f"{user.id} is newly found")
@@ -272,7 +272,7 @@ async def handler_user_join(event):
             if user.id in tracked_user_ids:
                 chat = await event.get_chat()
                 await report(
-                    f"❕ #u{user.id} {render_user(user)} #joined {render_chat(chat)}\nnow is at {render_datetime()}"
+                    f"❕ #u_{user.id} {render_user(user)} #joined {render_chat(chat)}\nnow is at {render_datetime()}"
                 )
 
 
