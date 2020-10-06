@@ -32,3 +32,6 @@ Where `TARGET_USER` can be:
 Commands in any chats or groups where the bot is in will be accepted as long as the requester has been granted proper admin privileges. The bot reports only on successful command requests in the specified `REPORT_CHANNEL` (instead of the chat or group where the request is raised) and won't report any error.
 
 Only root admins, which can be the bot account itself or an additional one specified as mentioned above, can elevate or lift admin (privileges).
+
+## Storage
+The bot utilize "Saved Messgage" to store data persistently without requiring manually configuring. Currently, only previously blocked contacts and elevated admins needs persistent storage.
