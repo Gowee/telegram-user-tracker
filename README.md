@@ -27,7 +27,7 @@ Other configurable options are listed in [.config](https://github.com/Gowee/tele
 Where `TARGET_USER` can be:
 * a username with or without @;
 * a https://t.me url to a message the target user sent, *which works only if the message is linked in a public group or the bot is also in the private group where the message originates*;
-* an id, *which won't work under many cases due to the limitation of [Telegram's abuse-prevention mechanism](https://docs.telethon.dev/en/latest/concepts/entities.html)*.
+* an numeric id, *which won't work under many cases due to the limitation of [Telegram's abuse-prevention mechanism](https://docs.telethon.dev/en/latest/concepts/entities.html)*.
 
 Commands in any chats or groups where the bot is in will be accepted as long as the requester has been granted proper admin privileges. The bot reports only on successful command requests in the specified `REPORT_CHANNEL` (instead of the chat or group where the request is raised) and won't report any error.
 
