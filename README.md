@@ -6,7 +6,7 @@ A telegram bot built with MTProto (telethon) to track user accounts persistently
 ## How?
 Telegram automatically adds newly created accounts, which shares the same phone number with the ones already blocked and deleted, to the list of blocked contacts, of which the bot keeps tracking the changes.
 
-**Note:** In general, if a new corresponding account is not created immediately after the old account is deleted, it is barely possible to relate those accounts when there are lots of tracked accounts. The reason is the mechanism provided by Telegram does not reveal such relations. 
+**Note:** In general, if a new corresponding account is not created immediately after the old account is deleted, it is barely possible to relate those accounts when there are lots of tracked accounts. The reason is that the mechanism provided by Telegram does not reveal such relations. 
 
 ## Run
 `env API_ID={ID} API_HASH={HASH} REPORT_CHANNEL={CHANNEL_OR_CHAT_ID} ROOT_ADMIN={USER_ID} python -m telegram-user-tracker`
