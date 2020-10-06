@@ -5,7 +5,7 @@
 A telegram bot built with MTProto (telethon) to track user accounts persistently even through account deletion and recreation.
 
 ## How?
-Telegram automatically adds newly created accounts, which shares the same phone number with the ones already blocked and deleted, to the list of blocked contacts, of which the bot keeps tracking the changes.
+Telegram automatically adds newly created accounts, which share the same phone number with the ones already blocked and deleted, to the list of blocked contacts, of which the bot keeps tracking the changes.
 
 **Note:** In general, if a new corresponding account is not created immediately after the old account is deleted, it is barely possible to relate those accounts when there are lots of tracked accounts. The reason is that the mechanism provided by Telegram does not reveal such relations. 
 
