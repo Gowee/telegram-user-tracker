@@ -1,3 +1,4 @@
+[![Docker build automation status](https://img.shields.io/docker/cloud/automated/gowe/telegram-user-tracker)](https://hub.docker.com/repository/docker/gowe/telegram-user-tracker)
 ![CI status badge](https://github.com/Gowee/traceroute-map-panel/workflows/CI/badge.svg)
 
 # telegram-user-tracker
