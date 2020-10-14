@@ -178,7 +178,7 @@ async def _extract_target_user_id(event) -> int:
                 if url[2].startswith("/c/"):
                     # link to a message in a private chat
                     _, chat, msgid = url[2].lstrip("/").split("/")
-                    chat = int(chat) # here chat is numeric id
+                    chat = int(chat)  # here chat is numeric id
                 else:
                     # in a public group
                     chat, msgid = url[2].lstrip("/").split("/")

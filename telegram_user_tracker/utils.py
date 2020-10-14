@@ -61,7 +61,11 @@ def render_user(user: User, html_instead_of_markdown: bool = False) -> str:
         for name_part in (user.first_name, user.last_name)
         if name_part is not None
     )
-    if not name or name.isspace():
+    if (
+        not name
+        or name.isspace()
+        or not any(map(lambda char: char.isprintable(), name))
+    ):  # e.g. b'\xe2\x81\xa5'
         name = str(user.id)
     r = render_mention(user.id, name)
     if user.username:
