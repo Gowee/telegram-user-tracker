@@ -9,7 +9,7 @@ WORKDIR /app
 VOLUME ["/app/session"]
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false; \
-    poetry install
+    poetry install --no-dev
 COPY . .
 RUN chmod +x entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
