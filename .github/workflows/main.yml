@@ -10,6 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: "Black check"
-      uses: lgeiger/black-action@v1.0.1
-      with:
-        args: . --check
+      uses: psf/black@stable  # already includes args "--check --diff"
+#       uses: lgeiger/black-action@v1.0.1
+#       with:
+#         args: . --check
