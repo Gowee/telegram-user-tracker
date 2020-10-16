@@ -238,7 +238,7 @@ async def check_and_report(users_ignored: Sequence[int] = tuple()):
                 cr = render_user(user)
                 if not user_previous.deleted and user.deleted:
                     await report(
-                        f"💥 #u_{user.id} / {pr} account #deleted\n"
+                        f"💥 #u_{user.id} {pr} account #deleted\n"
                         f"tracking since {render_datetime(user.date_blocked)}\n"
                         f"now is at {render_datetime()}"
                     )
