@@ -160,7 +160,7 @@ async def handler_clear_admins(event):
     await report(
         f"⚠️ All admins privileges are lifted as requested by {render_user(requester)}."
     )
-    logger.info(f"{render_user(requester)} requests to list all admins' privileges")
+    logger.info(f"{render_user(requester)} requests to lift all admins' privileges")
 
 
 async def _extract_target_user_id(event) -> int:
