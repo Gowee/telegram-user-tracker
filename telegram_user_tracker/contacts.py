@@ -60,7 +60,7 @@ async def get_blocked(offset: int = 0, limit: int = 100) -> types.Blocked:
 async def iter_blocked(offset=0, _chunk_size=100) -> AsyncGenerator[BlockedUser, None]:
     while True:
         d = await get_blocked(offset, _chunk_size)
-        dates = {blocked.user_id: blocked.date for blocked in d.blocked}
+        dates = {blocked.peer_id.user_id: blocked.date for blocked in d.blocked}
         for user in d.users:
             user.date_blocked = dates[user.id]
             user.__class__ = BlockedUser

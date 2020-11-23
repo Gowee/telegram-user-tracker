@@ -145,3 +145,4 @@ cython_debug/
 .api_id
 .api_hash
 *.session
+*.session-journal
