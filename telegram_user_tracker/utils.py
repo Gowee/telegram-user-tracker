@@ -99,6 +99,7 @@ class DummyFile(BytesIO):
         super().__init__(content)
         self.name = name
 
+
 def get_sender_id(message: Message) -> int:
     """Get `sender_id` of a `Message`"""
     sender_id = None
