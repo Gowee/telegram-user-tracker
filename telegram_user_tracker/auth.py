@@ -6,6 +6,7 @@ import logging
 from .config import ROOT_ADMIN
 from .client import client
 from .storage import MessageStorage
+from .utils import get_sender_id
 
 
 logger = logging.getLogger(__name__)
@@ -67,17 +68,18 @@ def for_admins_only(root=False):
     def wrapper(command_handler):
         @functools.wraps(command_handler)
         async def wrapped(event):
+            sender_id = get_sender_id(event.message)
             if root:
                 admins = (ROOT_ADMIN, (await get_me()).id)
-                # print(admins, event.message.from_id)
-                if not event.message.from_id or event.message.from_id not in admins:
+                # print(admins, sender_id)
+                if not sender_id or sender_id not in admins:
                     return
             else:
                 admins = await get_admins()
                 if (
-                    not event.message.from_id
-                    or event.message.from_id not in admins
-                    or event.message.from_id
+                    not sender_id
+                    or sender_id not in admins
+                    or sender_id
                     not in await get_admins(refresh=True)  # to avoid stale result
                 ):
                     return

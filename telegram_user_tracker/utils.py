@@ -6,7 +6,7 @@ from datetime import datetime
 
 from telethon.tl.tlobject import TLObject
 from telethon.extensions import BinaryReader
-from telethon.tl.types import User, Channel, Chat
+from telethon.tl.types import User, Channel, Chat, Message, PeerUser
 
 
 def read_file(file_path: str, strip=True, raise_on_error=False) -> Union[str, None]:
@@ -98,3 +98,16 @@ class DummyFile(BytesIO):
     def __init__(self, name: str, content: bytes):
         super().__init__(content)
         self.name = name
+
+def get_sender_id(message: Message) -> int:
+    """Get `sender_id` of a `Message`"""
+    sender_id = None
+    if message.from_id is None:
+        # in group chat
+        # newer version of MTProto API has no from_id for message in group
+        if isinstance(message.peer_id, PeerUser):
+            sender_id = message.peer_id.user_id
+    else:
+        # private chat
+        sender_id = message.from_id
+    return sender_id
