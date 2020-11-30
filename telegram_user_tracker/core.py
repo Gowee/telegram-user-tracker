@@ -218,7 +218,7 @@ async def keep_tracking():
 
 
 check_lock = Lock()
-tracked_user_ids = {}
+tracked_user_ids = set()
 
 
 async def check_and_report(users_ignored: Sequence[int] = tuple()):
