@@ -20,6 +20,7 @@ from .utils import (
     render_user,
     render_chat,
     render_datetime,
+    get_sender_id,
 )
 from .config import CHECK_INTERVAL, REPORT_CHANNEL, ROOT_ADMIN
 from .auth import get_admins, add_admin, remove_admin, clear_admins, for_admins_only
@@ -45,13 +46,13 @@ async def handler_test(event):
 @for_admins_only(root=False)
 async def handler_track(event):
     logger.debug(event)
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     target = await _extract_target_user_id(event)
     try:
         target = await client.get_entity(target)
     except ValueError as e:
         logger.info(
-            f"{event.message.from_id} request to track {target} which is invalid: {e}"
+            f"{get_sender_id(event.message)} request to track {target} which is invalid: {e}"
         )
         return
     await contacts.block(target)
@@ -65,13 +66,13 @@ async def handler_track(event):
 @client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
 @for_admins_only(root=False)
 async def handler_ignore(event):
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     target = await _extract_target_user_id(event)
     try:
         target = await client.get_entity(target)
     except ValueError as e:
         logger.info(
-            f"{event.message.from_id} request to ignore {target} which is invalid: {e}"
+            f"{get_sender_id(event.message)} request to ignore {target} which is invalid: {e}"
         )
         return
     await contacts.unblock(target)
@@ -84,7 +85,7 @@ async def handler_ignore(event):
 @client.on(events.NewMessage(pattern=r"(?i)[!/]list[_\- ]tracked(?P<args>.*)"))
 @for_admins_only(root=False)
 async def handler_list_tracked(event):
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     d = await blockedUsersStorage.load()
     assert d
     blocked = deserialize_vector(d)
@@ -96,7 +97,7 @@ async def handler_list_tracked(event):
 @client.on(events.NewMessage(pattern="(?i)[!/]elevate(?P<args>.*)"))
 @for_admins_only(root=True)
 async def handler_elevate(event):
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     target = await _extract_target_user_id(event)
     try:
         target = await client.get_entity(target)
@@ -118,7 +119,7 @@ async def handler_elevate(event):
 @client.on(events.NewMessage(pattern="(?i)[!/]lift(?P<args>.*)"))
 @for_admins_only(root=True)
 async def handler_lift(event):
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     target = await _extract_target_user_id(event)
     try:
         target = await client.get_entity(target)
@@ -141,7 +142,7 @@ async def handler_lift(event):
 @client.on(events.NewMessage(pattern=r"(?i)[!/]list[_\- ]admins(?P<args>.*)"))
 @for_admins_only(root=False)
 async def handler_list_admins(event):
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     admins = []
     for user_id in await get_admins(refresh=True):
         admins.append(await client.get_entity(user_id))
@@ -156,7 +157,7 @@ async def handler_list_admins(event):
 @for_admins_only(root=True)
 async def handler_clear_admins(event):
     await clear_admins()
-    requester = await client.get_entity(event.message.from_id)
+    requester = await client.get_entity(get_sender_id(event.message))
     await report(
         f"⚠️ All admins privileges are lifted as requested by {render_user(requester)}."
     )
@@ -166,7 +167,7 @@ async def handler_clear_admins(event):
 async def _extract_target_user_id(event) -> int:
     if reply_to := await event.message.get_reply_message():
         # Targeted at the sender of a replied-to messsage, with no extra args needed.
-        target = reply_to.from_id
+        target = get_sender_id(reply_to)
     else:
         # Or the target can be extracted from the args.
         args = event.pattern_match.group("args").strip()
@@ -185,7 +186,7 @@ async def _extract_target_user_id(event) -> int:
                     # here chat is the @username of a group
 
                 msg = await client.get_messages(chat, ids=int(msgid))
-                target = msg.from_id
+                target = get_sender_id(msg)
             else:
                 # This works only for cases where the session has cached the entities of the target.
                 # Ref: https://docs.telethon.dev/en/latest/concepts/entities.html
