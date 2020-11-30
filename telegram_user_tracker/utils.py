@@ -102,13 +102,12 @@ class DummyFile(BytesIO):
 
 def get_sender_id(message: Message) -> int:
     """Get `sender_id` of a `Message`"""
-    sender_id = None
     if message.from_id is None:
         # in group chat
-        # newer version of MTProto API has no from_id for message in group
-        if isinstance(message.peer_id, PeerUser):
-            sender_id = message.peer_id.user_id
+        # sometimes, newer version of MTProto API has no from_id for message in group
+        sender = message.peer_id
     else:
-        # private chat
-        sender_id = message.from_id
-    return sender_id
+        # in private chat
+        sender = message.from_id
+    if isinstance(message.peer_id, PeerUser):
+        return sender.user_id
