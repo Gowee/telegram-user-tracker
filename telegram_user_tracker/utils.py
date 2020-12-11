@@ -102,12 +102,16 @@ class DummyFile(BytesIO):
 
 def get_sender_id(message: Message) -> int:
     """Get `sender_id` of a `Message`"""
-    if message.from_id is None:
-        # in group chat
-        # sometimes, newer version of MTProto API has no from_id for message in group
-        sender = message.peer_id
-    else:
-        # in private chat
-        sender = message.from_id
-    if isinstance(message.peer_id, PeerUser):
-        return sender.user_id
+    sender = message.from_id
+    # if message.from_id is None:
+    #    # in group chat
+    #    # <del>sometimes, newer version of MTProto API has no from_id for message in group</del>
+    #    # it seems to be a problem of misunderstanding the "remain anonymous" permission in test group?
+    #    # Or regression in MTProto API?
+    #    sender = message.peer_id
+    # else:
+    #    # in private chat
+    #    sender = message.from_id
+    if isinstance(sender, PeerUser):
+        sender = sender.user_id
+    return sender
