@@ -50,6 +50,7 @@ class BlockedUser(User):
         return user
 
 
+assert telethon.tl.alltlobjects.tlobjects.get(BlockedUser.CONSTRUCTOR_ID) is None
 telethon.tl.alltlobjects.tlobjects[BlockedUser.CONSTRUCTOR_ID] = BlockedUser
 
 
