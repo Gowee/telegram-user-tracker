@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import functools
 
 from telethon import TelegramClient, events
-from telethon.tl.types import User
+from telethon.tl.types import User, MessageMediaDocument
 
 from .client import client
 from . import contacts
@@ -63,7 +63,7 @@ async def handler_track(event):
     )
 
 
-@client.on(events.NewMessage(pattern="(?i)[!/]ignore(?P<args>.*)"))
+@client.on(events.NewMessage(pattern=r"(?i)[!/]ignore(?P<args>.*)"))
 @for_admins_only(root=False)
 async def handler_ignore(event):
     requester = await client.get_entity(get_sender_id(event.message))
@@ -215,7 +215,9 @@ async def keep_tracking():
             await check_and_report()
         except Exception:
             try:
-                await client.send_message(ROOT_ADMIN or "me", __import__("traceback").format_exc())
+                await client.send_message(
+                    ROOT_ADMIN or "me", __import__("traceback").format_exc()
+                )
             except:
                 pass
             logger.warning(f"Error when check_and_report", exc_info=True)
@@ -283,5 +285,85 @@ async def handler_user_join(event):
                 )
 
 
+@client.on(events.NewMessage(pattern=r"(?i)[!/]inspect(?P<args>.*)"))
+@for_admins_only(root=False)
+async def handler_inspect(event):
+    requester = await client.get_entity(get_sender_id(event.message))
+    target = await _extract_target_user_id(event)
+    try:
+        target = await client.get_entity(target)
+    except ValueError as e:
+        # await event.reply(f"{target} is invalid")
+        logger.info(
+            f"{get_sender_id(event.message)} request to inspect {target} which is invalid: {e}"
+        )
+        return
+    chats = await contacts.get_common_groups(target)
+    message = f"Groups of #u_{target.id} {render_user(target)}, as requested by {render_user(requester)} at {render_datetime()}:\n"
+    message += "\n".join(map(lambda chat: "• " + render_chat(chat), chats))
+    logger.info(message)
+    await report(message)
+    # TODO: get first/last message link in each group
+    # await event.reply(message) # <del># currently, only hello & inspect reply directly to the requester instead of the channel</del>
+
+
+@client.on(events.NewMessage(pattern=r"(?i)[!/]export[-_ ]tracked"))
+@for_admins_only(root=True)
+async def handler_export_tracked(event):
+    requester = await client.get_entity(get_sender_id(event.message))
+    d = await blockedUsersStorage.load()
+    assert d
+    blocked = [user.to_dict() for user in deserialize_vector(d)]
+    for user in blocked:
+        # some fields cannot be accepted by BlockedUser constructor when deserializing
+        del user["_"]  # type marker, i.e. `User`
+        # TODO: the ser/de logic for BlockedUser is too complex. How about just using a plain json
+        #       with a few specific fields instead?
+        for k, v in user.items():
+            if "restricted" in user:
+                user["restricted"] = None
+            if not isinstance(v, (str, int, bool, type(None), type(Ellipsis))):
+                user[k] = None
+    await event.reply(
+        "",
+        file=DummyFile(
+            "tracked.json",
+            json.dumps(
+                blocked,
+                indent=2,
+                ensure_ascii=False,
+                default=lambda _: None,  # filter out non-JSON-serializable types, such as bytes
+            ).encode("utf-8"),
+        ),
+    )
+
+
+@client.on(events.NewMessage(pattern=r"(?i)[!/]import[-_ ]tracked"))
+@for_admins_only(root=True)
+async def handler_import_tracked(event):
+    # requester = await client.get_entity(get_sender_id(event.message))
+    try:
+        message = event.message
+        if not message.media and (reply_to := await event.message.get_reply_message()):
+            message = reply_to
+        if message.media and isinstance(message.media, MessageMediaDocument):
+            d = await client.download_media(message, bytes)
+            imported = [
+                contacts.BlockedUser(**user) for user in json.loads(d.decode("utf-8"))
+            ]
+            serialized = serialize_vector(imported)
+            await blockedUsersStorage.init()
+            await blockedUsersStorage.store(serialized)
+            await event.reply(f"Overwritten with {len(imported)} entries.")
+            await check_and_report()  # TODO: use a channel to trigger check
+        else:
+            await event.reply(f"No data file specified")
+    except Exception:
+        await event.reply(__import__("traceback").format_exc())
+        logger.exception(f"Error when importing")
+
+
 # TODO: abstract blocked users manager like .contacts or .auth so that to avoid manually managing
 #       tracked_user_ids
+
+# TODO: a standalone tool for data migrations instead of import/export commands?

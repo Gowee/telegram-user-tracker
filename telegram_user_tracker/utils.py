@@ -77,7 +77,7 @@ def render_chat(chat: Union[Chat, Channel, User]) -> str:
     if isinstance(chat, Chat):
         return f"{chat.title} ({chat.id})"
     elif isinstance(chat, Channel):
-        return f"{chat.title} ({('@' + chat.username) or chat.id})"
+        return f"{chat.title} ({('@' + chat.username) if chat.username else chat.id})"
     elif isinstance(chat, User):
         return render_user(chat)
     else:

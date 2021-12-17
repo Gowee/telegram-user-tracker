@@ -11,6 +11,7 @@ from telethon.tl.types import (
     MessageMediaDocument,
 )
 from telethon.hints import EntitiesLike
+from telethon.errors.rpcerrorlist import MessageNotModifiedError
 
 from .client import client
 from .utils import b85size, DummyFile
@@ -40,7 +41,7 @@ class MessageStorage:
         return f"{self.__class__.__name__}(chat={self.chat}, key={self.key!r})"
 
     async def ensure_prepared(self):
-        if not self.message: # To circumvent issue #2, just comment the check
+        if not self.message:  # To circumvent issue #2, just comment the check
             return await self.prepare()
 
     async def prepare(self):
@@ -54,11 +55,14 @@ class MessageStorage:
         if entries:
             self.message = entries[0]
         else:
-            logger.debug(f"Creating a new message for {self!r}")
-            self.message = await client.send_message(
-                self.chat,
-                f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```",
-            )
+            self.init()
+
+    async def init(self):
+        logger.debug(f"Creating a new message for {self!r}")
+        self.message = await client.send_message(
+            self.chat,
+            f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```",
+        )
 
     async def load(self) -> bytes:
         await self.ensure_prepared()
@@ -81,45 +85,48 @@ class MessageStorage:
 
         # the maximum bytes length of message body seems to be 4906
         # hardcode a safe value to avoid reach the limit
-        if b85size(data) > 3600:
-            if self.message.media and isinstance(
-                self.message.media, MessageMediaDocument
-            ):
-                logger.debug(f"editing media: {data[:10]}... for key {self.key}")
-                self.message = await client.edit_message(
-                    self.chat,
-                    self.message,
-                    text=self.ident,
-                    file=DummyFile("data.bin", data),
-                    force_document=True,
-                )
+        try:
+            if b85size(data) > 3600:
+                if self.message.media and isinstance(
+                    self.message.media, MessageMediaDocument
+                ):
+                    logger.debug(f"editing media: {data[:10]}... for key {self.key}")
+                    self.message = await client.edit_message(
+                        self.chat,
+                        self.message,
+                        text=self.ident,
+                        file=DummyFile("data.bin", data),
+                        force_document=True,
+                    )
+                else:
+                    logger.debug(
+                        f"replacing text with document: {data[:10]}... for key {self.key}"
+                    )
+                    await client.delete_messages(self.chat, self.message)
+                    self.message = await client.send_message(
+                        self.chat, self.ident, file=DummyFile("data.bin", data)
+                    )
             else:
-                logger.debug(
-                    f"replacing text with document: {data[:10]}... for key {self.key}"
-                )
-                await client.delete_messages(self.chat, self.message)
-                self.message = await client.send_message(
-                    self.chat, self.ident, file=DummyFile("data.bin", data)
-                )
-        else:
-            if self.message.media and isinstance(
-                self.message.media, MessageMediaDocument
-            ):
-                logger.debug(
-                    f"replacing document with text: {data[:10]}... for key {self.key}"
-                )
-                await client.delete_messages(self.chat, self.message)
-                self.message = await client.send_message(
-                    self.chat,
-                    f"{self.ident} ```\n::{b85encode(data).decode('latin-1')}::\n```",
-                )
-            else:
-                logger.debug(f"editing message: {data[:10]}... for key {self.key}")
-                self.message = await client.edit_message(
-                    self.chat,
-                    self.message,
-                    text=f"{self.ident} ```\n::{b85encode(data).decode('latin-1')}::\n```",
-                )
+                if self.message.media and isinstance(
+                    self.message.media, MessageMediaDocument
+                ):
+                    logger.debug(
+                        f"replacing document with text: {data[:10]}... for key {self.key}"
+                    )
+                    await client.delete_messages(self.chat, self.message)
+                    self.message = await client.send_message(
+                        self.chat,
+                        f"{self.ident} ```\n::{b85encode(data).decode('latin-1')}::\n```",
+                    )
+                else:
+                    logger.debug(f"editing message: {data[:10]}... for key {self.key}")
+                    self.message = await client.edit_message(
+                        self.chat,
+                        self.message,
+                        text=f"{self.ident} ```\n::{b85encode(data).decode('latin-1')}::\n```",
+                    )
+        except MessageNotModifiedError:
+            pass
 
     async def reset(self):
         await self.ensure_prepared()

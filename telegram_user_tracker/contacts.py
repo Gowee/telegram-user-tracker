@@ -7,6 +7,7 @@ from telethon import TelegramClient
 from telethon.tl.types import User
 from telethon.tl.types import contacts as types
 from telethon.tl.functions import contacts as requests
+from telethon.tl.functions.messages import GetCommonChatsRequest
 from telethon.hints import EntitiesLike
 from telethon.extensions import BinaryReader
 
@@ -25,7 +26,11 @@ class BlockedUser(User):
     date_blocked: datetime
 
     def __init__(self, date_blocked=None, *args, **kwargs):
+        if not args and "id" in kwargs:
+            args = (kwargs.pop("id"),)
         super().__init__(*args, **kwargs)
+        if isinstance(date_blocked, int):
+            date_blocked = datetime.fromtimestamp(date_blocked)
         self.date_blocked = date_blocked
 
     def to_dict(self):
@@ -79,3 +84,8 @@ async def block(user: EntitiesLike) -> bool:
 
 async def unblock(user: EntitiesLike) -> bool:
     return await client(requests.UnblockRequest(user))
+
+
+async def get_common_groups(user: EntitiesLike) -> bool:
+    result = await client(GetCommonChatsRequest(user_id=user, max_id=0, limit=128))
+    return result.chats
