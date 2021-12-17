@@ -89,7 +89,7 @@ async def handler_list_tracked(event):
     d = await blockedUsersStorage.load()
     assert d
     blocked = deserialize_vector(d)
-    msg = f"Currently tracking list, as requested by {render_user(requester)} at {render_datetime()}:\n"
+    msg = f"Current tracking list, as requested by {render_user(requester)} at {render_datetime()}:\n"
     msg += "\n".join(f"#u_{user.id} {render_user(user)}" for user in blocked)
     await report(msg)
 
@@ -214,6 +214,10 @@ async def keep_tracking():
         try:
             await check_and_report()
         except Exception:
+            try:
+                await client.send_message(ROOT_ADMIN or "me", __import__("traceback").format_exc())
+            except:
+                pass
             logger.warning(f"Error when check_and_report", exc_info=True)
         await aiosleep(CHECK_INTERVAL)
 

@@ -40,7 +40,7 @@ class MessageStorage:
         return f"{self.__class__.__name__}(chat={self.chat}, key={self.key!r})"
 
     async def ensure_prepared(self):
-        if not self.message:
+        if not self.message: # To circumvent issue #2, just comment the check
             return await self.prepare()
 
     async def prepare(self):
