@@ -1,5 +1,7 @@
 [![Docker build status](https://img.shields.io/docker/cloud/build/gowe/telegram-user-tracker)](https://hub.docker.com/repository/docker/gowe/telegram-user-tracker)
-![CI status badge](https://github.com/Gowee/traceroute-map-panel/workflows/CI/badge.svg)
+<!--Docker hub no longer provides automated build for free.-->
+<!--[![Quay build status](https://quay.io/repository/gowee/tut/status)](https://quay.io/repository/gowee/tut)
+![CI status badge](https://github.com/Gowee/traceroute-map-panel/workflows/CI/badge.svg)-->
 
 # telegram-user-tracker
 A telegram bot built with MTProto (telethon) to track user accounts persistently even through account deletion and recreation.
@@ -24,6 +26,8 @@ Other configurable options are listed in [.config](https://github.com/Gowee/tele
 * `/list_admins`: Request to display a list of admins.
 * `/elevate {TARGET_USER}`: Elevate an admin.
 * `/lift {TARGET_USER}`: Lift the privileges of a existing admin.
+* `/export_tracked`: Export the tracking list as JSON, for data migrations between versions
+* `/import_tracked`: Import the tracking list in JSON, for data migrations between versions
 
 Where `TARGET_USER` can be:
 * a username with or without @;
