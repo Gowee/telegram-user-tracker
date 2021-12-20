@@ -67,22 +67,22 @@ class MessageStorage:
             f"{self.ident} ```\n::{b85encode(self.default).decode('latin-1')}::\n```",
         )
 
-    async def _download_media(self, *args, **kwargs):
+    async def _download(self):
         errcnt = 0
         while True:
             try:
-                return await client.download_media(*args, **kwargs)
+                return await client.download_media(self.message.media, bytes)
             except FileReferenceExpiredError as e:
                 if errcnt >= 2:
                     raise e
                 errcnt += 1
-            await self.prepare()
+                await self.prepare()
 
     async def load(self) -> bytes:
         await self.ensure_prepared()
         assert self.message  # prepare should be done first
         if self.message.media and isinstance(self.message.media, MessageMediaDocument):
-            d = await self._download_media(self.message, bytes)
+            d = await self._download()
         elif match := REGEX_MESSAGE_PAYLOAD.search(self.message.message):
             d = b85decode(match.group(1))
         else:
