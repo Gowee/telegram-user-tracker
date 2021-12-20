@@ -71,7 +71,7 @@ class MessageStorage:
         errcnt = 0
         while True:
             try:
-                return await client.download_media(*args, **args)
+                return await client.download_media(*args, **kwargs)
             except FileReferenceExpiredError as e:
                 if errcnt >= 2:
                     raise e
