@@ -72,10 +72,10 @@ async def iter_blocked(offset=0, _chunk_size=100) -> AsyncGenerator[BlockedUser,
             user.__class__ = BlockedUser
             yield user
         if (
-            isinstance(d, types.Blocked) and not isinstance(d, types.BlockedSlice)
-        ) or d.count < _chunk_size:
+            not isinstance(d, types.BlockedSlice)
+            or (offset := offset + len(d.blocked)) < d.count
+        ):
             break
-        offset += d.count
 
 
 async def block(user: EntitiesLike) -> bool:
