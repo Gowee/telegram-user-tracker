@@ -174,7 +174,7 @@ async def _extract_target_user_id(event) -> int:
 
         try:
             if (url := urlparse(args))[1].lower() == "t.me":
-                # Hence mtproto does not allow locating a User by their ID without entities obtained in
+                # Since mtproto does not allow locating a User by their ID without entities obtained in
                 # advance, here accepting a message URL linked to a message the target sent.
                 if url[2].startswith("/c/"):
                     # link to a message in a private chat
